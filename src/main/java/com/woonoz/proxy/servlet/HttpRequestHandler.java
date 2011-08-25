@@ -32,8 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -42,10 +40,12 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class HttpRequestHandler {
 
-	private static final Log logger = LogFactory.getLog("com.woonoz.proxy.servlet");
+	private static final Logger logger = LoggerFactory.getLogger("com.woonoz.proxy.servlet");
 	private final HttpServletRequest request;
 	private final HttpServletResponse response;
 	private final URL targetServer;
@@ -78,17 +78,11 @@ public abstract class HttpRequestHandler {
 		ServerHeadersHandler serverHeadersHandler = new ServerHeadersHandler(urlRewriter);
 		HttpRequestBase httpCommand = null;
 		try {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Doing rewrite for uri: " + request.getRequestURL());
-			}
+			logger.debug("Doing rewrite for uri: " + request.getRequestURL());
 			final URI targetUri = urlRewriter.rewriteUri(new URI(request.getRequestURL().toString()));
-			if (logger.isDebugEnabled()) {
-				logger.debug("Making request for rewritten uri: " + targetUri);
-			}
+			logger.debug("Making request for rewritten uri: " + targetUri);
 			httpCommand = createHttpCommand(targetUri, clientHeadersHandler);
-			if (logger.isDebugEnabled()) {
-				logger.debug("http client command: " + httpCommand.getRequestLine() + ", headers: " + Arrays.asList(httpCommand.getAllHeaders()));
-			}
+			logger.debug("http client command: " + httpCommand.getRequestLine() + ", headers: " + Arrays.asList(httpCommand.getAllHeaders()));
 			performHttpRequest(httpCommand, response, serverHeadersHandler);
 		} catch (URISyntaxException e) {
 			handleException(httpCommand, e);
@@ -153,9 +147,7 @@ public abstract class HttpRequestHandler {
 		HttpContext context = new BasicHttpContext();
 		context.setAttribute(HttpRequestHandler.class.getName(), this);
 		HttpResponse responseFromServer = client.execute(requestToServer, context);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Performed request: " + requestToServer.getRequestLine() + " --> " + responseFromServer.getStatusLine());				
-		}
+		logger.debug("Performed request: " + requestToServer.getRequestLine() + " --> " + responseFromServer.getStatusLine());				
 		responseToClient.setStatus(responseFromServer.getStatusLine().getStatusCode());
 		copyHeaders(responseFromServer, responseToClient, serverHeadersHandler);
 		HttpEntity entity = responseFromServer.getEntity();
